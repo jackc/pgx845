@@ -43,32 +43,34 @@ func main() {
 	}
 
 	for i := 0; i < 1000000000; i++ {
-		rows, err := conn.Query(context.Background(), "select data from j;")
-		if err != nil {
-			log.Fatalln("conn.Query unexpectedly failed:", err)
-		}
-		defer rows.Close()
-
-		var result []*Foo
-		for rows.Next() {
-			var data Foo
-			scanErr := rows.Scan(&data)
-			if scanErr != nil {
-				log.Fatalln("rows.Scan unexpectedly failed:", scanErr)
+		func() {
+			rows, err := conn.Query(context.Background(), "select data from j;")
+			if err != nil {
+				log.Fatalln("conn.Query unexpectedly failed:", err)
 			}
-			result = append(result, &data)
-		}
-		if err := rows.Err(); err != nil {
-			log.Fatalln("rows.Err() is not nil:", err)
-		}
-		if resLen := len(result); resLen != 3 {
-			log.Fatalln("len(result) is expected to be 3, but got", resLen)
-		}
+			defer rows.Close()
 
-		if i%10000 == 0 {
-			runtime.GC()
-			runtime.ReadMemStats(&memStats)
-			fmt.Printf("i=%d\tHeapAlloc=%d\tHeapObjects=%d\n", i, memStats.HeapAlloc, memStats.HeapObjects)
-		}
+			var result []*Foo
+			for rows.Next() {
+				var data Foo
+				scanErr := rows.Scan(&data)
+				if scanErr != nil {
+					log.Fatalln("rows.Scan unexpectedly failed:", scanErr)
+				}
+				result = append(result, &data)
+			}
+			if err := rows.Err(); err != nil {
+				log.Fatalln("rows.Err() is not nil:", err)
+			}
+			if resLen := len(result); resLen != 3 {
+				log.Fatalln("len(result) is expected to be 3, but got", resLen)
+			}
+
+			if i%100000 == 0 {
+				runtime.GC()
+				runtime.ReadMemStats(&memStats)
+				fmt.Printf("i=%d\tHeapAlloc=%d\tHeapObjects=%d\n", i, memStats.HeapAlloc, memStats.HeapObjects)
+			}
+		}()
 	}
 }
